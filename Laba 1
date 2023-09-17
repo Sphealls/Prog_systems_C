@@ -1,3 +1,121 @@
+//1.Даны две переменные. Поменяйте значения переменных друг с другом двумя способами
+
+#include <stdio.h>
+#include <math.h>
+
+int main() {
+
+    int a, b;
+    printf("Первоначальные данные:");
+    scanf("%d%d", &a, &b);
+    a = a * b; 
+    b = a / b;  
+    a = a / b;
+    
+    printf("Данные после программы: %d, %d", a, b);
+
+    return 0;
+ }
+
+
+//2.Дано два числа a и b. Найдите гипотенузу треугольника с заданными катетами.
+
+#include <stdio.h>
+#include <math.h>
+
+
+int main() {
+double a, b, c;
+
+    printf("Введите два катета а и b: ");
+    scanf("%lf%lf", &a, &b);
+
+    c = sqrt(a*a + b*b);
+
+    printf("Гипотенуза равна: %lf",c);
+
+    return 0;
+}
+
+//3.Дано натуральное число. Выведите его последнюю цифру.
+
+#include <stdio.h>
+#include <math.h>
+
+
+int main() {
+
+    int a;
+    printf("Введите натуральное число: ");
+    scanf("%d", &a);
+
+    printf("Выведите его последнюю цифру: %d", a%10);
+
+    return 0;
+}
+
+
+//4.Дано неотрицательное целое число. Найдите число десятков в его десятичной записи (то есть вторую справа цифру его десятичной записи).
+
+#include <stdio.h>
+#include <math.h>
+
+
+int main() {
+
+int number, n_tens;
+
+    printf("Введите неотрицательное целое число: ");
+    scanf("%d", &number);
+
+    if (number >= 10) {
+        n_tens = (number / 10) % 10;} else {n_tens = 0;}
+
+    printf("Число десятков: %d", n_tens);
+
+
+   return 0;
+}
+
+//5.Дано двузначное число. Найдите число десятков в нем.
+
+#include <stdio.h>
+#include <math.h>
+
+int main() {
+
+int number;
+    printf("Введите двузначное число: ");
+    scanf("%d", &number);
+
+    printf("Число десятков: %d", abs(number)/10);
+    return 0;
+
+}
+
+
+//6. Вводится две целочисленные переменные и возвращает их среднее арифметическое
+
+#include <stdio.h>
+
+int main() {
+    int number_1, number_2;
+    float arif_mean;
+
+    printf("Введите первое число: ");
+    scanf("%d", &number_1);
+
+    printf("Введите второе число: ");
+    scanf("%d", &number_2);
+
+    arif_mean = (number_1 + number_2) / 2.0;
+
+    printf("Среднее арифметическое: %.2f\n", arif_mean);
+
+    return 0;
+}
+
+
 //7.Вводится две целочисленные переменные и возвращает их среднее геометрическое
 
 #include <stdio.h>//вкл использования ввода и вывода
@@ -156,3 +274,235 @@ int main() {
 }
 
 
+
+
+
+/*19.	Выведите на экран все точные квадраты натуральных чисел, не превосходящие данного числа N. 
+Выводить квадраты следует от меньшего к большему.*/
+
+#include <stdio.h>
+#include <math.h>
+
+void printPerfectSquares(int N) {
+    int i;
+    for(i = 1; i*i <= N; ++i) {
+        int square = i * i;
+        printf("%d ", square);
+    }
+}
+
+int main() {
+    int N;
+    printf("Введите число N: ");
+    scanf("%d", &N);
+
+    printf("Точные квадраты натуральных чисел, не превосходящие %d:\n", N);
+    printPerfectSquares(N);
+
+    printf("\n");
+
+    return 0;
+}
+
+
+/*20.	По данном числу N определить, является ли оно степенью числа 22.*/
+#include <stdio.h>
+
+int Power22(int N) {
+    while (N % 22 == 0) {
+        N /= 22;
+    }
+
+    if (N == 1) {
+        return 1;  // Число N является степенью числа 22
+    } else {
+        return 0;  // Число N не является степенью числа 22
+    }
+}
+
+int main() {
+    int N;
+    printf("Введите число N: ");
+    scanf("%d", &N);
+
+    if (Power22(N)) {
+        printf("%d является степенью числа 22\n", N);
+    } else {
+        printf("%d не является степенью числа 22\n", N);
+    }
+
+    return 0;
+}
+
+
+/*21.	Напишите программу, которая по данному натуральному N печатает его цифры в обратном порядке.*/
+#include <stdio.h>
+
+void ReverseDigits(int N) {
+    if (N == 0) {
+        printf("0"); // Если число N равно 0, печатаем только 0
+        return;
+    }
+
+    while (N > 0) {
+        int digit = N % 10; // Получаем последнюю цифру числа N
+        printf("%d ", digit);
+        N /= 10; // Удаляем последнюю цифру числа N
+    }
+}
+
+int main() {
+    int N;
+    printf("Введите натуральное число N: ");
+    scanf("%d", &N);
+
+    printf("Цифры числа %d в обратном порядке: ", N);
+    ReverseDigits(N);
+
+    printf("\n");
+
+    return 0;
+}
+
+/*22.	Вводится два положительных целых числа. Найти НОД.*/
+#include <stdio.h>
+
+// Функция для вычисления НОД по алгоритму Евклида
+int gcd(int a, int b) {
+    if (b == 0) {
+        return a; // Если второе число равно 0, то НОД равен первому числу
+    } else {
+        return gcd(b, a % b); // Рекурсивный вызов функции с новыми аргументами
+    }
+}
+
+int main() {
+    int a, b;
+    printf("Введите два положительных целых числа: ");
+    scanf("%d %d", &a, &b);
+
+    if (a <= 0 || b <= 0) {
+        printf("Ошибка: числа должны быть положительными\n");
+        return 1; // В случае неправильного ввода, завершаем программу с ошибкой
+    }
+
+    int result = gcd(a, b);
+
+    printf("Наибольший общий делитель (НОД) чисел %d и %d: %d\n", a, b, result);
+
+    return 0;
+}
+
+
+
+/*23.	Написать программу, позволяющую получить словесное описание школьных отметок
+(1 — «плохо», 2 — «неудовлетворительно», 3 — «удовлетворительно», 4 — «хорошо», 5 — «отлично»).*/
+#include <stdio.h>
+
+void Grade(int grade) {
+    switch (grade) {
+        case 1:
+            printf("Плохо\n");
+            break;
+        case 2:
+            printf("Неудовлетворительно\n");
+            break;
+        case 3:
+            printf("Удовлетворительно\n");
+            break;
+        case 4:
+            printf("Хорошо\n");
+            break;
+        case 5:
+            printf("Отлично\n");
+            break;
+        default:
+            printf("Некорректная оценка\n");
+    }
+}
+
+int main() {
+    int grade;
+    printf("Введите школьную оценку: ");
+    scanf("%d", &grade);
+
+    Grade(grade);
+
+    return 0;
+}
+
+
+
+/*24.	Вводятся 3 числа, описывающие вектор в трехмерном пространстве. Найти:
+1.	Длину вектора
+2.	Скалярное произведение
+3.	Вводить информацию о двух векторах
+4.	Векторное произведение между векторами
+5.	Методы для суммы и разности
+*/
+#include <stdio.h>
+#include <math.h>
+
+struct Vector {
+    float x;
+    float y;
+    float z;
+};
+
+float vectorLength(struct Vector v) {
+    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+float scalarProduct(struct Vector v1, struct Vector v2) {
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
+struct Vector vectorProduct(struct Vector v1, struct Vector v2) {
+    struct Vector result;
+    result.x = v1.y * v2.z - v1.z * v2.y;
+    result.y = v1.z * v2.x - v1.x * v2.z;
+    result.z = v1.x * v2.y - v1.y * v2.x;
+    return result;
+}
+
+struct Vector addVectors(struct Vector v1, struct Vector v2) {
+    struct Vector result;
+    result.x = v1.x + v2.x;
+    result.y = v1.y + v2.y;
+    result.z = v1.z + v2.z;
+    return result;
+}
+
+struct Vector subtractVectors(struct Vector v1, struct Vector v2) {
+    struct Vector result;
+    result.x = v1.x - v2.x;
+    result.y = v1.y - v2.y;
+    result.z = v1.z - v2.z;
+    return result;
+}
+
+int main() {
+    struct Vector v1, v2;
+    
+    printf("Введите координаты первого вектора (x, y, z): ");
+    scanf("%f %f %f", &v1.x, &v1.y, &v1.z);
+    
+    printf("Введите координаты второго вектора (x, y, z): ");
+    scanf("%f %f %f", &v2.x, &v2.y, &v2.z);
+    
+    printf("Длина первого вектора: %.2f\n", vectorLength(v1));
+    printf("Длина второго вектора: %.2f\n", vectorLength(v2));
+    
+    printf("Скалярное произведение векторов: %.2f\n", scalarProduct(v1, v2));
+    
+    struct Vector vectorProd = vectorProduct(v1, v2);
+    printf("Векторное произведение векторов: %.2f %.2f %.2f\n", vectorProd.x, vectorProd.y, vectorProd.z);
+    
+    struct Vector sum = addVectors(v1, v2);
+    struct Vector diff = subtractVectors(v1, v2);
+    
+    printf("Сумма векторов: %.2f %.2f %.2f\n", sum.x, sum.y, sum.z);
+    printf("Разность векторов: %.2f %.2f %.2f\n", diff.x, diff.y, diff.z);
+    
+    return 0;
+}
