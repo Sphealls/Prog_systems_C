@@ -1,1 +1,158 @@
+//7.Вводится две целочисленные переменные и возвращает их среднее геометрическое
+
+#include <stdio.h>//вкл использования ввода и вывода
+#include <math.h>//вкл использования математических ф-ий
+
+int main() {// точка входа в программу
+    int number_1, number_2;//объявление двух целочисленных переменных
+    double geometric_mean;//объявление переменной для геом ср типа дабл для представления числа с плавающей токой двойной точности и большей памяти(дробные напрм)
+
+    printf("Введите первое число: ");
+    scanf("%d", &number_1);//ожидается ввод с клавиатуры целого числа формата %d и сохраняет его в переменую с путем намбер1
+
+    printf("Введите второе число: ");
+    scanf("%d", &number_2);
+
+    geometric_mean = sqrt(number_1 * number_2);//находим среднее геометриеское
+
+    printf("Среднее геометрическое: %.4f\n", geometric_mean);//выводит среднее геометрическое с 4 знаками после запятой
+
+    return 0;//завершение программы
+}
+
+
+
+//8. Вводится 4 числа с плавающей точкой. Первые два числа – координаты x, y первой точки. Вторые два числа – координаты x,y второй точки. Найти расстояние между двумя точками
+
+
+#include <stdio.h>
+#include <math.h>
+
+int main() {
+    float x1, y1, x2, y2;
+    float dist_way;
+
+    printf("Введите координаты первой точки (x1, y1): ");
+    scanf("%f %f", &x1, &y1);
+
+    printf("Введите координаты второй точки (x2, y2): ");
+    scanf("%f %f", &x2, &y2);
+
+    dist_way = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+
+    printf("Расстояние между двумя точками: %.2f\n", dist_way);
+
+    return 0;
+}
+
+//9.Вводятся три разных числа. Найти, какое из них является средним (больше одного, но меньше другого).
+
+
+#include <stdio.h>
+
+int main() {
+    float number_1, number_2, number_3;
+    float mean_number;
+
+    printf("Введите три разных числа: ");
+    scanf("%f %f %f", &number_1, &number_2, &number_3);
+
+    if ((number_1 > number_2 && number_1 < number_3) || (number_1 < number_2 && number_1 > number_3)) {
+        mean_number = number_1;
+    } else if ((number_2 > number_1 && number_2 < number_3) || (number_2 < number_1 && number_2 > number_3)) {
+        mean_number = number_2;
+    } else {
+        mean_number = number_3;
+    }
+
+    printf("Среднее число: %.2f\n", mean_number);
+
+    return 0;
+}
+
+/*10. Найти корни квадратного уравнения и вывести их на экран, если они есть. Если корней нет, то вывести сообщение об этом. 
+Конкретное квадратное уравнение определяется коэффициентами a, b, c, которые вводит пользователь.*/
+
+#include <stdio.h>
+#include <math.h>
+
+int main() {
+    float a, b, c;
+    float discriminant, root_equation_1, root_equation_2;
+
+    printf("Введите коэффициенты квадратного уравнения (a, b, c): ");
+    scanf("%f %f %f", &a, &b, &c);
+
+    discriminant = b * b - 4 * a * c;
+
+    if (discriminant > 0) {
+        root_equation_1 = (-b + sqrt(discriminant)) / (2 * a);
+        root_equation_2 = (-b - sqrt(discriminant)) / (2 * a);
+        printf("Корни квадратного уравнения: %.2f и %.2f\n", root_equation_1, root_equation_2);
+    } else if (discriminant == 0) {
+        root_equation_1 = -b / (2 * a);
+        printf("Корень квадратного уравнения: %.2f\n", root_equation_1);
+    } else {
+        printf("Квадратное уравнение не имеет действительных корней.\n");
+    }
+
+    return 0;
+}
+
+/* Введите коэффициенты квадратного �равнения (a, b, c): 1 4 3
+Корни квадратног� уравнения: -1.00 и -3.00*/
+//11. Вводятся три целых числа. Определить какое из них наибольшее.
+
+
+#include <stdio.h>
+
+int main() {
+    int number_1, number_2, number_3;
+    int max_number;
+
+    printf("Введите три целых числа: ");
+    scanf("%d %d %d", &number_1, &number_2, &number_3);
+
+    max_number = number_1;
+
+    if (number_2 > max_number) {
+        max_number = number_2;
+    }
+
+    if (number_3 > max_number) {
+        max_number = number_3;
+    }
+
+    printf("Наибольшее число: %d\n", max_number);
+
+    return 0;
+}
+
+
+/*12. По длинам трех отрезков, введенных пользователем, определить возможность существования треугольника, составленного из этих отрезков.
+Если такой треугольник существует, то определить, является ли он разносторонним, равнобедренным или равносторонним.*/
+
+#include <stdio.h>
+
+int main() {
+    float a, b, c;
+
+    printf("Введите длины трех отрезков: ");
+    scanf("%f %f %f", &a, &b, &c);
+
+    if (a + b > c && b + c > a && a + c > b) {
+        if (a == b && b == c) {
+            printf("Треугольник является равносторонним.\n");
+        } else if (a == b || b == c || a == c) {
+            printf("Треугольник является равнобедренным.\n");
+        } else {
+            printf("Треугольник является разносторонним.\n");
+        }
+    } else {
+        printf("Треугольник с такими сторонами не существует.\n");
+    }
+
+    return 0;
+}
+
 
