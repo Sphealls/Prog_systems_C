@@ -361,17 +361,17 @@ int main() {
 #include <stdio.h>
 
 int main() {
-    int number, summa;
+    int number, sum;
     printf("Введите первое число последовательности \n");
     scanf("%d", &number);
     while(number != -9999){
-        summa += number;
+        sum += number;
         printf("%d \n", number);
         printf("Введите следующее число последовательности \n");
         scanf("%d", &number);
     }
-    summa += -9999;
-    printf("Сумма чисел последовательности: %d", summa);
+    sum += -9999;
+    printf("Сумма чисел последовательности: %d", sum);
 }
 
 
@@ -411,7 +411,7 @@ int main() {
 #include <stdio.h>
 #include <math.h>
 
-void printPerfectSquares(int N) {
+void exact_squares(int N) {
     int i;
     for(i = 1; i*i <= N; ++i) {
         int square = i * i;
@@ -425,7 +425,7 @@ int main() {
     scanf("%d", &N);
 
     printf("Точные квадраты натуральных чисел, не превосходящие %d:\n", N);
-    printPerfectSquares(N);
+    exact_squares(N);
 
     printf("\n");
 
@@ -436,7 +436,7 @@ int main() {
 /*20.	По данном числу N определить, является ли оно степенью числа 22.*/
 #include <stdio.h>
 
-int Power22(int N) {
+int power_22(int N) {
     while (N % 22 == 0) {
         N /= 22;
     }
@@ -453,7 +453,7 @@ int main() {
     printf("Введите число N: ");
     scanf("%d", &N);
 
-    if (Power22(N)) {
+    if (power_22(N)) {
         printf("%d является степенью числа 22\n", N);
     } else {
         printf("%d не является степенью числа 22\n", N);
@@ -466,15 +466,15 @@ int main() {
 /*21.	Напишите программу, которая по данному натуральному N печатает его цифры в обратном порядке.*/
 #include <stdio.h>
 
-void ReverseDigits(int N) {
+void reverse_N(int N) {
     if (N == 0) {
         printf("0"); // Если число N равно 0, печатаем только 0
         return;
     }
 
     while (N > 0) {
-        int digit = N % 10; // Получаем последнюю цифру числа N
-        printf("%d ", digit);
+        int last = N % 10; // Получаем последнюю цифру числа N
+        printf("%d ", last);
         N /= 10; // Удаляем последнюю цифру числа N
     }
 }
@@ -485,7 +485,7 @@ int main() {
     scanf("%d", &N);
 
     printf("Цифры числа %d в обратном порядке: ", N);
-    ReverseDigits(N);
+    reverse_N(N);
 
     printf("\n");
 
@@ -496,11 +496,11 @@ int main() {
 #include <stdio.h>
 
 // Функция для вычисления НОД по алгоритму Евклида
-int gcd(int a, int b) {
+int nod(int a, int b) {
     if (b == 0) {
         return a; // Если второе число равно 0, то НОД равен первому числу
     } else {
-        return gcd(b, a % b); // Рекурсивный вызов функции с новыми аргументами
+        return nod(b, a % b); // Рекурсивный вызов функции с новыми аргументами
     }
 }
 
@@ -514,7 +514,7 @@ int main() {
         return 1; // В случае неправильного ввода, завершаем программу с ошибкой
     }
 
-    int result = gcd(a, b);
+    int result = nod(a, b);
 
     printf("Наибольший общий делитель (НОД) чисел %d и %d: %d\n", a, b, result);
 
