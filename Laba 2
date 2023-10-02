@@ -1,1 +1,694 @@
 
+/*1. Реализовать функцию, которая возвращает единичную квадратную матрицу заданного размера.*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int** createIdentityMatrix(int size) {
+    int** matrix = (int**)malloc(size * sizeof(int*));
+    for (int i = 0; i < size; i++) {
+        matrix[i] = (int*)malloc(size * sizeof(int));
+        for (int j = 0; j < size; j++) {
+            if (i == j) {
+                matrix[i][j] = 1;
+            } else {
+                matrix[i][j] = 0;
+            }
+        }
+    }
+    return matrix;
+}
+
+void printMatrix(int** matrix, int size) {
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            printf("%d ", matrix[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    int size;
+    printf("Введите размер квадратной матрицы: ");
+    scanf("%d", &size);
+    
+    int** identityMatrix = createIdentityMatrix(size);
+    
+    printf("Единичная квадратная матрица размера %d:\n", size);
+    printMatrix(identityMatrix, size);
+    
+    // Освобождаем память, выделенную для матрицы
+    for (int i = 0; i < size; i++) {
+        free(identityMatrix[i]);
+    }
+    free(identityMatrix);
+    
+    return 0;
+}
+
+/*2.Матрицы представлены в виде двумерных массивов. Реализовать функции, которые возвращают новый массив
+1. Сложение и вычитание матриц
+2. Умножение матрицы на число
+3. Произведение двух матриц
+4. Транспонированная матрица
+5. Функция для определения равенства матриц
+6. Функции должны иметь проверку на возможность осуществления операции
+7. Для определения размера матрицы используется функция sizeof()*/
+
+#include <stdio.h>
+#include <stdbool.h>
+
+// Функция для сложения матриц
+bool addMatrices(int mat1[][MAX_SIZE], int mat2[][MAX_SIZE], int result[][MAX_SIZE], int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            result[i][j] = mat1[i][j] + mat2[i][j];
+        }
+    }
+    return true;
+}
+
+// Функция для вычитания матриц
+bool subtractMatrices(int mat1[][MAX_SIZE], int mat2[][MAX_SIZE], int result[][MAX_SIZE], int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            result[i][j] = mat1[i][j] - mat2[i][j];
+        }
+    }
+    return true;
+}
+
+// Функция для умножения матрицы на число
+bool multiplyMatrixByScalar(int mat[][MAX_SIZE], int scalar, int result[][MAX_SIZE], int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            result[i][j] = mat[i][j] * scalar;
+        }
+    }
+    return true;
+}
+
+// Функция для вычисления произведения двух матриц
+bool multiplyMatrices(int mat1[][MAX_SIZE], int mat2[][MAX_SIZE], int result[][MAX_SIZE], int rows1, int cols1, int rows2, int cols2) {
+    if (cols1 != rows2) {
+        return false; // Невозможно умножить матрицы
+    }
+
+    for (int i = 0; i < rows1; i++) {
+        for (int j = 0; j < cols2; j++) {
+            result[i][j] = 0;
+            for (int k = 0; k < cols1; k++) {
+                result[i][j] += mat1[i][k] * mat2[k][j];
+            }
+        }
+    }
+    return true;
+}
+
+// Функция для транспонирования матрицы
+void transposeMatrix(int mat[][MAX_SIZE], int result[][MAX_SIZE], int rows, int cols) {
+    for (int i = 0; i < cols; i++) {
+        for (int j = 0; j < rows; j++) {
+            result[i][j] = mat[j][i];
+        }
+    }
+}
+
+// Функция для определения равенства матриц
+bool areMatricesEqual(int mat1[][MAX_SIZE], int mat2[][MAX_SIZE], int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            if (mat1[i][j] != mat2[i][j]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/*3.Реализовать функцию, которая на вход получает одномерный массив и булевскую переменную. 
+Функция возвращает массив той же размерности, и отсортированной в зависимости от булевской переменной (true – по возрастанию, false – по убыванию)*/
+
+#include <stdio.h>
+#include <stdbool.h>
+
+void swap(int* a, int* b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void sortArray(int arr[], int size, bool ascending) {
+    for (int i = 0; i < size - 1; i++) {
+        for (int j = 0; j < size - i - 1; j++) {
+            if (ascending) {
+                if (arr[j] > arr[j + 1]) {
+                    swap(&arr[j], &arr[j + 1]);
+                }
+            } else {
+                if (arr[j] < arr[j + 1]) {
+                    swap(&arr[j], &arr[j + 1]);
+                }
+            }
+        }
+    }
+}
+
+int main() {
+    int size;
+    bool ascending;
+    printf("Введите размер массива: ");
+    scanf("%d", &size);
+    int arr[size];
+    
+    printf("Введите элементы массива:\n");
+    for (int i = 0; i < size; i++) {
+        scanf("%d", &arr[i]);
+    }
+    
+    printf("Выберите сортировку (1 - по возрастанию, 0 - по убыванию): ");
+    scanf("%d", &ascending);
+    
+    sortArray(arr, size, ascending);
+    
+    printf("Отсортированный массив:\n");
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+    
+    return 0;
+}
+
+
+/*4.Дано натуральное число n. Выведите все числа от 1 до n. Реализовать при помощи рекурсии.*/
+
+#include <stdio.h>
+
+void printNumbers(int n) {
+    if (n > 0) {
+        printNumbers(n - 1);
+        printf("%d ", n);
+    }
+}
+
+int main() {
+    int n;
+    printf("Введите натуральное число n: ");
+    scanf("%d", &n);
+    
+    if (n <= 0) {
+        printf("Введите положительное натуральное число.\n");
+    } else {
+        printf("Числа от 1 до %d: ", n);
+        printNumbers(n);
+    }
+    
+    return 0;
+}
+
+
+/*5. Напишите функцию, которая проверяет, входит ли в одномерный массив заданный 
+элемент или нет. Используйте перебор и двоичный поиск для решения этой задачи. 
+Сравните время выполнения обоих решений для больших массивов (например, 100000000 
+элементов). Реализовать при помощи рекурсии*/
+
+#include <stdio.h>
+
+int linearSearch(int arr[], int n, int target, int index) {
+    if (index >= n) {
+        return 0; // Элемент не найден
+    }
+    
+    if (arr[index] == target) {
+        return 1; // Элемент найден
+    }
+    
+    return linearSearch(arr, n, target, index+1); // Рекурсивный вызов для проверки следующего элемента
+}
+
+int main() {
+    int arr[10] = {15, 10, 25, 7, 12, 30, 20, 5, 18, 22};
+    int target = 30;
+    
+    int result = linearSearch(arr, 10, target, 0);
+    
+    if (result) {
+        printf("Элемент %d найден\n", target);
+    } else {
+        printf("Элемент %d не найден\n", target);
+    }
+    
+    return 0;
+}
+
+
+
+/*6. Найдите корень уравнения cos x5 + x4-345.3*x-23=0 на отрезке [0;10] с точностью по x не 
+хуже 0.001. Известно, что на этом промежутке корень единственный. Используйте для 
+этого метод деления отрезка пополам (и рекурсию).*/
+
+#include <stdio.h>
+#include <math.h>
+
+double equation(double x) {
+    return cos(pow(x, 5)) + pow(x, 4) - 345.3 * x - 23;
+}
+
+double bisectionMethod(double a, double b, double precision) {
+    double c = (a + b) / 2;
+    
+    if (fabs(equation(c)) < precision) {
+        return c; // Найден корень с требуемой точностью
+    }
+    
+    if (equation(a) * equation(c) < 0) {
+        return bisectionMethod(a, c, precision); // Рекурсивно ищем корень в левой половине отрезка
+    } else {
+        return bisectionMethod(c, b, precision); // Рекурсивно ищем корень в правой половине отрезка
+    }
+}
+
+int main() {
+    double a = 0;
+    double b = 10;
+    double precision = 0.001;
+    
+    double root = bisectionMethod(a, b, precision);
+    
+    printf("Корень уравнения на отрезке [0; 10] с точностью %.3f: %.5f\n", precision, root);
+    
+    return 0;
+}
+
+
+
+/*7. Найти элемент, наиболее близкий к среднему значению всех элементов массива.*/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+int findClosestToAverage(int arr[], int size) {
+    int sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += arr[i];
+    }
+    
+    double average = (double) sum / size;
+    
+    int closest = arr[0];
+    int minimumDifference = abs(arr[0] - average);
+    
+    for (int i = 1; i < size; i++) {
+        int difference = abs(arr[i] - average);
+        
+        if (difference < minimumDifference) {
+            minimumDifference = difference;
+            closest = arr[i];
+        }
+    }
+    
+    return closest;
+}
+
+int main() {
+    int arr[] = {10, 5, 8, 12, 9};
+    int size = sizeof(arr) / sizeof(arr[0]);
+    
+    int closestElement = findClosestToAverage(arr, size);
+    
+    printf("Наиболее близкий элемент к среднему: %d\n", closestElement);
+    
+    return 0;
+}
+
+
+
+/*8. Определить, имеются ли в массиве одинаковые элементы.*/
+
+
+#include <stdio.h>
+
+int hasDuplicates(int arr[], int size) {
+    for (int i = 0; i < size - 1; i++) {
+        for (int j = i + 1; j < size; j++) {
+            if (arr[i] == arr[j]) {
+                return 1; // Есть повторяющиеся элементы
+            }
+        }
+    }
+    
+    return 0; // Нет повторяющихся элементов
+}
+
+int main() {
+    int arr[] = {1, 2, 3, 4, 2, 5};
+    int size = sizeof(arr) / sizeof(arr[0]);
+    
+    if (hasDuplicates(arr, size)) {
+        printf("Массив содержит повторяющиеся элементы\n");
+    } else {
+        printf("Массив не содержит повторяющихся элементов\n");
+    }
+    
+    return 0;
+}
+
+
+/*9. В массиве числа образуют неубывающую последовательность. Несколько элементов, идущих подряд, равны между собой. Найти количество таких элементов.*/
+
+#include <stdio.h>
+
+int main() {
+    int n;
+    printf("Введите размер массива: ");
+    scanf("%d", &n);
+
+    if (n <= 0) {
+        printf("Размер массива должен быть положительным.\n");
+        return 1;
+    }
+
+    int array[n];
+    printf("Введите элементы массива в неубывающем порядке:\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &array[i]);
+    }
+
+    int count = 1; // Инициализируем количество одинаковых элементов как минимум 1 (первый элемент)
+
+    for (int i = 1; i < n; i++) {
+        if (array[i] == array[i - 1]) {
+            count++;
+        } else {
+            // Новый элемент в последовательности, сбрасываем счетчик
+            printf("Подряд идущих одинаковых элементов: %d\n", count);
+            count = 1;
+        }
+    }
+
+    // Выводим количество последних подряд идущих одинаковых элементов
+    printf("Подряд идущих одинаковых элементов: %d\n", count);
+
+    return 0;
+}
+
+
+
+/*10.Изменить знак у максимального по модулю элемента массива.*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int n;
+    printf("Введите размер массива: ");
+    scanf("%d", &n);
+
+    if (n <= 0) {
+        printf("Размер массива должен быть положительным.\n");
+        return 1;
+    }
+
+    int array[n];
+    printf("Введите элементы массива:\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &array[i]);
+    }
+
+    // Находим максимальный по модулю элемент и его индекс
+    int maxAbsValue = abs(array[0]);
+    int maxAbsIndex = 0;
+    for (int i = 1; i < n; i++) {
+        if (abs(array[i]) > maxAbsValue) {
+            maxAbsValue = abs(array[i]);
+            maxAbsIndex = i;
+        }
+    }
+
+    // Изменяем знак у максимального по модулю элемента
+    array[maxAbsIndex] = -array[maxAbsIndex];
+
+    // Выводим измененный массив
+    printf("Массив после изменения знака у максимального по модулю элемента:\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d ", array[i]);
+    }
+
+    return 0;
+}
+
+
+/*11. Даны два массива. Элементы каждого из массивов упорядочены по неубыванию. 
+Объединить элементы этих двух массивов в третий массив так, чтобы они снова оказались упорядоченными по неубыванию.*/
+
+#include <stdio.h>
+
+void mergeArrays(int arr1[], int size1, int arr2[], int size2, int result[]) {
+    int i = 0, j = 0, k = 0;
+
+    // Объединяем элементы двух массивов в третий массив
+    while (i < size1 && j < size2) {
+        if (arr1[i] < arr2[j]) {
+            result[k++] = arr1[i++];
+        } else {
+            result[k++] = arr2[j++];
+        }
+    }
+
+    // Если в одном из массивов остались элементы, добавляем их в третий массив
+    while (i < size1) {
+        result[k++] = arr1[i++];
+    }
+
+    while (j < size2) {
+        result[k++] = arr2[j++];
+    }
+}
+
+int main() {
+    int size1, size2;
+    printf("Введите размер первого массива: ");
+    scanf("%d", &size1);
+
+    printf("Введите элементы первого массива (упорядоченные по неубыванию):\n");
+    int arr1[size1];
+    for (int i = 0; i < size1; i++) {
+        scanf("%d", &arr1[i]);
+    }
+
+    printf("Введите размер второго массива: ");
+    scanf("%d", &size2);
+
+    printf("Введите элементы второго массива (упорядоченные по неубыванию):\n");
+    int arr2[size2];
+    for (int i = 0; i < size2; i++) {
+        scanf("%d", &arr2[i]);
+    }
+
+    // Результирующий массив
+    int mergedArray[size1 + size2];
+
+    // Объединяем массивы
+    mergeArrays(arr1, size1, arr2, size2, mergedArray);
+
+    // Выводим объединенный массив
+    printf("Объединенный массив (упорядоченный по неубыванию):\n");
+    for (int i = 0; i < size1 + size2; i++) {
+        printf("%d ", mergedArray[i]);
+    }
+
+    return 0;
+}
+
+
+/*12. Упорядочить массив по неубыванию, используя алгоритм сортировки выбором: отыскивается максимальный элемент и переносится в конец массива; 
+затем этот метод применяется ко всем элементам, кроме последнего, который уже находится на своем месте, и т.д.*/
+
+#include <stdio.h>
+
+void selectionSort(int arr[], int size) {
+    for (int i = 0; i < size - 1; i++) {
+        int minIndex = i;
+
+        // Находим индекс минимального элемента в оставшейся части массива
+        for (int j = i + 1; j < size; j++) {
+            if (arr[j] < arr[minIndex]) {
+                minIndex = j;
+            }
+        }
+
+        // Обменяем текущий элемент с минимальным элементом
+        if (minIndex != i) {
+            int temp = arr[i];
+            arr[i] = arr[minIndex];
+            arr[minIndex] = temp;
+        }
+    }
+}
+
+int main() {
+    int size;
+    printf("Введите размер массива: ");
+    scanf("%d", &size);
+
+    if (size <= 0) {
+        printf("Размер массива должен быть положительным.\n");
+        return 1;
+    }
+
+    int arr[size];
+    printf("Введите элементы массива:\n");
+    for (int i = 0; i < size; i++) {
+        scanf("%d", &arr[i]);
+    }
+
+    // Сортируем массив с использованием сортировки выбором
+    selectionSort(arr, size);
+
+    // Выводим упорядоченный массив
+    printf("Упорядоченный массив по неубыванию:\n");
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+
+    return 0;
+}
+
+
+/*13. Найти сумму элементов массива, расположенных между максимальным и минимальным элементами (включительно).*/
+
+#include <stdio.h>
+
+int main() {
+    int size;
+    printf("Введите размер массива: ");
+    scanf("%d", &size);
+
+    if (size <= 0) {
+        printf("Размер массива должен быть положительным.\n");
+        return 1;
+    }
+
+    int arr[size];
+    printf("Введите элементы массива:\n");
+    for (int i = 0; i < size; i++) {
+        scanf("%d", &arr[i]);
+    }
+
+    // Находим индексы максимального и минимального элементов
+    int maxIndex = 0;
+    int minIndex = 0;
+    for (int i = 1; i < size; i++) {
+        if (arr[i] > arr[maxIndex]) {
+            maxIndex = i;
+        }
+        if (arr[i] < arr[minIndex]) {
+            minIndex = i;
+        }
+    }
+
+    // Находим сумму элементов между максимальным и минимальным элементами
+    int sum = 0;
+    int start = (maxIndex < minIndex) ? maxIndex : minIndex;
+    int end = (maxIndex > minIndex) ? maxIndex : minIndex;
+    for (int i = start; i <= end; i++) {
+        sum += arr[i];
+    }
+
+    // Выводим сумму элементов
+    printf("Сумма элементов между максимальным и минимальным элементами: %d\n", sum);
+
+    return 0;
+}
+
+
+
+/*14. Вычислить y = x1 + x1x2 + x1x2x3 + … + x1x2…xm, 
+где m – либо номер первого отрицательного элемента массива x, либо номер последнего элемента, 
+если в массиве x нет отрицательных элементов.*/
+
+#include <stdio.h>
+
+int main() {
+    int size;
+    printf("Введите размер массива: ");
+    scanf("%d", &size);
+
+    if (size <= 0) {
+        printf("Размер массива должен быть положительным.\n");
+        return 1;
+    }
+
+    int x[size];
+    printf("Введите элементы массива:\n");
+    for (int i = 0; i < size; i++) {
+        scanf("%d", &x[i]);
+    }
+
+    int m = size;
+    for (int i = 0; i < size; i++) {
+        if (x[i] < 0) {
+            m = i;
+            break;
+        }
+    }
+
+    int y = 0;
+    int product = 1;
+    for (int i = 0; i < m; i++) {
+        product *= x[i];
+        y += product;
+    }
+
+    printf("Результат вычислений: %d\n", y);
+
+    return 0;
+}
+
+
+/*15. Элементы массива циклически сдвинуть на две позиции влево.*/
+
+#include <stdio.h>
+
+void leftRotateByTwo(int arr[], int size) {
+    int temp1 = arr[0];
+    int temp2 = arr[1];
+
+    for (int i = 0; i < size - 2; i++) {
+        arr[i] = arr[i + 2];
+    }
+
+    arr[size - 2] = temp1;
+    arr[size - 1] = temp2;
+}
+
+int main() {
+    int size;
+    printf("Введите размер массива: ");
+    scanf("%d", &size);
+
+    if (size <= 0) {
+        printf("Размер массива должен быть положительным.\n");
+        return 1;
+    }
+
+    int arr[size];
+    printf("Введите элементы массива:\n");
+    for (int i = 0; i < size; i++) {
+        scanf("%d", &arr[i]);
+    }
+
+    // Выполняем циклический сдвиг на две позиции влево
+    leftRotateByTwo(arr, size);
+
+    // Выводим массив после сдвига
+    printf("Массив после циклического сдвига на две позиции влево:\n");
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+
+    return 0;
+}
