@@ -558,3 +558,1266 @@ int main() {
 
     return 0;
 }
+
+
+
+
+###14 Если вы решили задачи 11 и 13, объясните, почему ваше доказательство неприменимо к семафорам-счетчикам.
+
+В задаче 11 было доказано, что использование только двух мьютексов не позволяет синхронизировать вывод родительской и дочерней нитей в нужном порядке. 
+Это связано с тем, что мьютексы не предоставляют механизма ожидания и сигнализации между нитями.
+Однако, семафоры-счетчики, используемые в задаче 13, предоставляют такой механизм. 
+С помощью функций sem_wait() и sem_post() нити могут ожидать разрешения и сообщать друг другу о завершении выполнения определенного действия.
+Поэтому, доказательство из задачи 11 не применимо к семафорам-счетчикам, 
+так как семафоры-счетчики обеспечивают возможность синхронизации между нитями и позволяют решить задачу 10 в нужном порядке вывода строк.
+
+###15 Родительская поток программы должна считывать вводимые пользователем строки и помещать их в начало связанного списка. 
+Строки длиннее 80 символов можно разрезать на несколько строк. 
+При вводе пустой строки программа должна выдавать текущее состояние списка. 
+Дочерняя поток пробуждается каждые пять секунд и сортирует список в лексикографическом порядке (используйте пузырьковую сортировку). 
+Все операции над списком должны синхронизоваться при помощи мутекса.###
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+
+#define MAX_LENGTH 80
+
+// Структура для хранения узла списка
+typedef struct Node {
+    char data[MAX_LENGTH];
+    struct Node* next;
+} Node;
+
+// Глобальные переменные
+Node* head = NULL;
+pthread_mutex_t mutex;
+
+// Функция для добавления строки в начало списка
+void addToList(char* str) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    strcpy(newNode->data, str);
+    newNode->next = head;
+    head = newNode;
+}
+
+// Функция для сортировки списка методом пузырька
+void bubbleSort() {
+    if (head == NULL || head->next == NULL) {
+        return;
+    }
+
+    int swapped;
+    Node* ptr1;
+    Node* lptr = NULL;
+
+    do {
+        swapped = 0;
+        ptr1 = head;
+
+        while (ptr1->next != lptr) {
+            if (strcmp(ptr1->data, ptr1->next->data) > 0) {
+                char temp[MAX_LENGTH];
+                strcpy(temp, ptr1->data);
+                strcpy(ptr1->data, ptr1->next->data);
+                strcpy(ptr1->next->data, temp);
+                swapped = 1;
+            }
+            ptr1 = ptr1->next;
+        }
+        lptr = ptr1;
+    } while (swapped);
+}
+
+// Функция для вывода списка
+void printList() {
+    Node* current = head;
+    while (current != NULL) {
+        printf("%s\n", current->data);
+        current = current->next;
+    }
+}
+
+// Функция для освобождения памяти, занятой списком
+void freeList() {
+    Node* current = head;
+    Node* next;
+    while (current != NULL) {
+        next = current->next;
+        free(current);
+        current = next;
+    }
+    head = NULL;
+}
+
+// Функция для дочернего потока
+void* childThread(void* arg) {
+    while (1) {
+        sleep(5);
+        pthread_mutex_lock(&mutex);
+        bubbleSort();
+        pthread_mutex_unlock(&mutex);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t thread;
+    pthread_mutex_init(&mutex, NULL);
+
+    // Создание дочернего потока
+    int result = pthread_create(&thread, NULL, childThread, NULL);
+    if (result != 0) {
+        perror("Thread creation failed");
+        return 1;
+    }
+
+    char input[MAX_LENGTH];
+    while (1) {
+        printf("Введите строку (или оставьте пустую строку для вывода списка): ");
+        fgets(input, sizeof(input), stdin);
+        input[strcspn(input, "\n")] = '\0'; // Удаление символа новой строки
+
+        if (strlen(input) == 0) {
+            pthread_mutex_lock(&mutex);
+            printf("Текущее состояние списка:\n");
+            printList();
+            pthread_mutex_unlock(&mutex);
+        } else {
+            pthread_mutex_lock(&mutex);
+            addToList(input);
+            pthread_mutex_unlock(&mutex);
+        }
+    }
+
+    // Ожидание завершения дочернего потока
+    pthread_join(thread, NULL);
+
+    // Освобождение памяти и уничтожение мутекса
+    freeList();
+    pthread_mutex_destroy(&mutex);
+
+    return 0;
+}
+
+
+###16 Переделайте программу упр. 15 так, чтобы с каждой записью (а также с заголовком списка) был связан свой собственный мутекс.
+Примечание: при перестановке записей списка, необходимой при реализации пузырьковой сортировки, необходимо блокировать мутексы трех записей.
+Примечание 2: чтобы избежать мертвых блокировок, мутексы записей, более близких к началу списка, всегда захватывайте раньше.
+Примечание 3: преподаватель может потребовать, чтобы программа включала две или более сортирующие нити, а также потребовать измепоток интервал между сортировками.###
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+
+#define MAX_LENGTH 100
+
+typedef struct Node {
+    char data[MAX_LENGTH];
+    struct Node* next;
+    pthread_mutex_t mutex;
+} Node;
+
+Node* head = NULL;
+
+// Функция для добавления строки в список
+void addToList(char* str) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    strcpy(newNode->data, str);
+    newNode->next = head;
+    pthread_mutex_init(&newNode->mutex, NULL);
+    head = newNode;
+}
+
+// Функция для сортировки списка методом пузырька
+void bubbleSort(Node* start, Node* end) {
+    int swapped;
+    Node* ptr1;
+    Node* lptr = NULL;
+
+    if (start == end || start == NULL || end == NULL)
+        return;
+
+    do {
+        swapped = 0;
+        ptr1 = start;
+
+        while (ptr1->next != end) {
+            pthread_mutex_lock(&ptr1->mutex);
+            pthread_mutex_lock(&ptr1->next->mutex);
+
+            if (strcmp(ptr1->data, ptr1->next->data) > 0) {
+                char temp[MAX_LENGTH];
+                strcpy(temp, ptr1->data);
+                strcpy(ptr1->data, ptr1->next->data);
+                strcpy(ptr1->next->data, temp);
+                swapped = 1;
+            }
+
+            pthread_mutex_unlock(&ptr1->mutex);
+            pthread_mutex_unlock(&ptr1->next->mutex);
+
+            ptr1 = ptr1->next;
+        }
+        lptr = ptr1;
+    } while (swapped);
+}
+
+// Функция для вывода списка
+void printList() {
+    Node* current = head;
+    while (current != NULL) {
+        printf("%s\n", current->data);
+        current = current->next;
+    }
+}
+
+// Функция для освобождения памяти, занятой списком
+void freeList() {
+    Node* current = head;
+    Node* next;
+    while (current != NULL) {
+        next = current->next;
+        free(current);
+        current = next;
+    }
+    head = NULL;
+}
+
+// Функция для дочернего потока
+void* childThread(void* arg) {
+    while (1) {
+        sleep(5);
+        pthread_mutex_lock(&head->mutex);
+        bubbleSort(head, NULL);
+        pthread_mutex_unlock(&head->mutex);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t thread1, thread2;
+    pthread_mutex_init(&head->mutex, NULL);
+
+    // Создание дочерних потоков
+    int result1 = pthread_create(&thread1, NULL, childThread, NULL);
+    int result2 = pthread_create(&thread2, NULL, childThread, NULL);
+    if (result1 != 0 || result2 != 0) {
+        perror("Thread creation failed");
+        return 1;
+    }
+
+    char input[MAX_LENGTH];
+    while (1) {
+        printf("Введите строку (или оставьте пустую строку для вывода списка): ");
+        fgets(input, sizeof(input), stdin);
+        input[strcspn(input, "\n")] = '\0'; // Удаление символа новой строки
+
+        if (strlen(input) == 0) {
+            pthread_mutex_lock(&head->mutex);
+            printf("Текущее состояние списка:\n");
+            printList();
+            pthread_mutex_unlock(&head->mutex);
+        } else {
+            Node* newNode = (Node*)malloc(sizeof(Node));
+            strcpy(newNode->data, input);
+            newNode->next = head;
+            pthread_mutex_init(&newNode->mutex, NULL);
+            head = newNode;
+        }
+    }
+
+    // Ожидание завершения дочерних потоков
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+
+    // Освобождение памяти и уничтожение мьютексов
+    freeList();
+    pthread_mutex_destroy(&head->mutex);
+
+    return 0;
+}
+
+
+###17 Модифицируйте программу упр. 16 так, чтобы дочерняя поток засыпала на одну секунду между исполнениями каждого шага сортировки 
+(между перестановками записей в списке). 
+При этом можно будет наблюдать процесс сортировки по шагам.###
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define MAX_LENGTH 100
+
+typedef struct Node {
+    char data[MAX_LENGTH];
+    struct Node* next;
+    pthread_mutex_t mutex;
+} Node;
+
+Node* head = NULL;
+
+// Функция для добавления строки в список
+void addToList(char* str) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    strcpy(newNode->data, str);
+    newNode->next = head;
+    pthread_mutex_init(&newNode->mutex, NULL);
+    head = newNode;
+}
+
+// Функция для сортировки списка методом пузырька
+void bubbleSort(Node* start, Node* end) {
+    int swapped;
+    Node* ptr1;
+    Node* lptr = NULL;
+
+    if (start == end || start == NULL || end == NULL)
+        return;
+
+    do {
+        swapped = 0;
+        ptr1 = start;
+
+        while (ptr1->next != end) {
+            pthread_mutex_lock(&ptr1->mutex);
+            pthread_mutex_lock(&ptr1->next->mutex);
+
+            if (strcmp(ptr1->data, ptr1->next->data) > 0) {
+                char temp[MAX_LENGTH];
+                strcpy(temp, ptr1->data);
+                strcpy(ptr1->data, ptr1->next->data);
+                strcpy(ptr1->next->data, temp);
+                swapped = 1;
+            }
+
+            pthread_mutex_unlock(&ptr1->mutex);
+            pthread_mutex_unlock(&ptr1->next->mutex);
+
+            ptr1 = ptr1->next;
+        }
+        lptr = ptr1;
+
+        // Задержка на одну секунду
+        sleep(1);
+
+    } while (swapped);
+}
+
+// Функция для вывода списка
+void printList() {
+    Node* current = head;
+    while (current != NULL) {
+        printf("%s\n", current->data);
+        current = current->next;
+    }
+}
+
+// Функция для освобождения памяти, занятой списком
+void freeList() {
+    Node* current = head;
+    Node* next;
+    while (current != NULL) {
+        next = current->next;
+        free(current);
+        current = next;
+    }
+    head = NULL;
+}
+
+// Функция для дочернего потока
+void* childThread(void* arg) {
+    while (1) {
+        pthread_mutex_lock(&head->mutex);
+        bubbleSort(head, NULL);
+        pthread_mutex_unlock(&head->mutex);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t thread;
+    pthread_mutex_init(&head->mutex, NULL);
+
+    // Создание дочернего потока
+    int result = pthread_create(&thread, NULL, childThread, NULL);
+    if (result != 0) {
+        perror("Thread creation failed");
+        return 1;
+    }
+
+    char input[MAX_LENGTH];
+    while (1) {
+        printf("Введите строку (или оставьте пустую строку для вывода списка): ");
+        fgets(input, sizeof(input), stdin);
+        input[strcspn(input, "\n")] = '\0'; // Удаление символа новой строки
+
+        if (strlen(input) == 0) {
+            pthread_mutex_lock(&head->mutex);
+            printf("Текущее состояние списка:\n");
+            printList();
+            pthread_mutex_unlock(&head->mutex);
+        } else {
+            Node* newNode = (Node*)malloc(sizeof(Node));
+            strcpy(newNode->data, input);
+            newNode->next = head;
+            pthread_mutex_init(&newNode->mutex, NULL);
+            head = newNode;
+        }
+    }
+
+    // Ожидание завершения дочернего потока
+    pthread_join(thread, NULL);
+
+    // Освобождение памяти и уничтожение мьютексов
+    freeList();
+    pthread_mutex_destroy(&head->mutex);
+
+    return 0;
+}
+
+
+###18 Модифицируйте программу упр. 15 так, чтобы вместо мутекса использовалась блокировка чтения-записи.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+
+#define MAX_LENGTH 100
+
+typedef struct Node {
+    char data[MAX_LENGTH];
+    struct Node* next;
+    pthread_rwlock_t rwlock;
+} Node;
+
+Node* head = NULL;
+
+// Функция для добавления новой строки в начало списка
+void addToList(char* str) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    strcpy(newNode->data, str);
+    newNode->next = head;
+    pthread_rwlock_init(&newNode->rwlock, NULL);
+    head = newNode;
+}
+
+// Функция для сортировки списка методом пузырька
+void bubbleSort() {
+    int swapped;
+    Node* ptr1;
+    Node* lptr = NULL;
+
+    if (head == NULL)
+        return;
+
+    do {
+        swapped = 0;
+        ptr1 = head;
+
+        while (ptr1->next != lptr) {
+            pthread_rwlock_wrlock(&ptr1->rwlock);
+            pthread_rwlock_wrlock(&ptr1->next->rwlock);
+
+            if (strcmp(ptr1->data, ptr1->next->data) > 0) {
+                char temp[MAX_LENGTH];
+                strcpy(temp, ptr1->data);
+                strcpy(ptr1->data, ptr1->next->data);
+                strcpy(ptr1->next->data, temp);
+                swapped = 1;
+            }
+
+            pthread_rwlock_unlock(&ptr1->rwlock);
+            pthread_rwlock_unlock(&ptr1->next->rwlock);
+
+            ptr1 = ptr1->next;
+        }
+        lptr = ptr1;
+
+    } while (swapped);
+}
+
+// Функция для вывода списка
+void printList() {
+    Node* current = head;
+    while (current != NULL) {
+        printf("%s\n", current->data);
+        current = current->next;
+    }
+}
+
+// Функция для освобождения памяти, занятой списком
+void freeList() {
+    Node* current = head;
+    Node* next;
+    while (current != NULL) {
+        next = current->next;
+        free(current);
+        current = next;
+    }
+    head = NULL;
+}
+
+// Функция для дочернего потока
+void* childThread(void* arg) {
+    while (1) {
+        pthread_rwlock_wrlock(&head->rwlock);
+        bubbleSort();
+        pthread_rwlock_unlock(&head->rwlock);
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t thread;
+    pthread_rwlock_init(&head->rwlock, NULL);
+
+    // Создание дочернего потока
+    int result = pthread_create(&thread, NULL, childThread, NULL);
+    if (result != 0) {
+        perror("Thread creation failed");
+        return 1;
+    }
+
+    char input[MAX_LENGTH];
+    while (1) {
+        printf("Введите строку (или оставьте пустую строку для вывода списка): ");
+        fgets(input, sizeof(input), stdin);
+        input[strcspn(input, "\n")] = '\0'; // Удаление символа новой строки
+
+        if (strlen(input) == 0) {
+            pthread_rwlock_rdlock(&head->rwlock);
+            printf("Текущее состояние списка:\n");
+            printList();
+            pthread_rwlock_unlock(&head->rwlock);
+        } else {
+            pthread_rwlock_wrlock(&head->rwlock);
+            addToList(input);
+            pthread_rwlock_unlock(&head->rwlock);
+        }
+    }
+
+    // Ожидание завершения дочернего потока
+    pthread_join(thread, NULL);
+
+    // Освобождение памяти и уничтожение блокировок
+    freeList();
+    pthread_rwlock_destroy(&head->rwlock);
+
+    return 0;
+}
+
+
+###19 Модифицируйте аналогичным образом программу упр. 16
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+
+#define MAX_LENGTH 100
+
+typedef struct Node {
+    char data[MAX_LENGTH];
+    struct Node* next;
+    pthread_rwlock_t rwlock;
+} Node;
+
+Node* head = NULL;
+
+// Функция для добавления строки в список
+void addToList(char* str) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    strcpy(newNode->data, str);
+    newNode->next = head;
+    pthread_rwlock_init(&newNode->rwlock, NULL);
+    head = newNode;
+}
+
+// Функция для сортировки списка методом пузырька
+void bubbleSort() {
+    int swapped;
+    Node* ptr1;
+    Node* lptr = NULL;
+
+    if (head == NULL)
+        return;
+
+    do {
+        swapped = 0;
+        ptr1 = head;
+
+        while (ptr1->next != lptr) {
+            pthread_rwlock_wrlock(&ptr1->rwlock);
+            pthread_rwlock_wrlock(&ptr1->next->rwlock);
+
+            if (strcmp(ptr1->data, ptr1->next->data) > 0) {
+                char temp[MAX_LENGTH];
+                strcpy(temp, ptr1->data);
+                strcpy(ptr1->data, ptr1->next->data);
+                strcpy(ptr1->next->data, temp);
+                swapped = 1;
+            }
+
+            pthread_rwlock_unlock(&ptr1->rwlock);
+            pthread_rwlock_unlock(&ptr1->next->rwlock);
+
+            ptr1 = ptr1->next;
+        }
+        lptr = ptr1;
+
+    } while (swapped);
+}
+
+// Функция для вывода списка
+void printList() {
+    Node* current = head;
+    while (current != NULL) {
+        printf("%s\n", current->data);
+        current = current->next;
+    }
+}
+
+// Функция для освобождения памяти, занятой списком
+void freeList() {
+    Node* current = head;
+    Node* next;
+    while (current != NULL) {
+        next = current->next;
+        free(current);
+        current = next;
+    }
+    head = NULL;
+}
+
+// Функция для дочернего потока
+void* childThread(void* arg) {
+    while (1) {
+        pthread_rwlock_wrlock(&head->rwlock);
+        bubbleSort();
+        pthread_rwlock_unlock(&head->rwlock);
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t thread;
+    pthread_rwlock_init(&head->rwlock, NULL);
+
+    // Создание дочернего потока
+    int result = pthread_create(&thread, NULL, childThread, NULL);
+    if (result != 0) {
+        perror("Thread creation failed");
+        return 1;
+    }
+
+    char input[MAX_LENGTH];
+    while (1) {
+        printf("Введите строку (или оставьте пустую строку для вывода списка): ");
+        fgets(input, sizeof(input), stdin);
+        input[strcspn(input, "\n")] = '\0'; // Удаление символа новой строки
+
+        if (strlen(input) == 0) {
+            pthread_rwlock_rdlock(&head->rwlock);
+            printf("Текущее состояние списка:\n");
+            printList();
+            pthread_rwlock_unlock(&head->rwlock);
+        } else {
+            pthread_rwlock_wrlock(&head->rwlock);
+            addToList(input);
+            pthread_rwlock_unlock(&head->rwlock);
+        }
+    }
+
+    // Ожидание завершения дочернего потока
+    pthread_join(thread, NULL);
+
+    // Освобождение памяти и уничтожение блокировок
+    freeList();
+    pthread_rwlock_destroy(&head->rwlock);
+
+    return 0;
+}
+
+
+###20 Разработайте имитатор производственной линии, изготавливающей винтики (widget). 
+Винтик собирается из детали C и модуля, который, в свою очередь, состоит из деталей A и B. 
+Для изготовления детали A требуется 1 секунда, В - две секунды, С - три секунды. 
+Задержку изготовления деталей имитируйте при помощи sleep. Используйте семафоры-счетчики.###
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+sem_t semA, semB, semC, semWidget;
+
+void* produceA(void* arg) {
+    while (1) {
+        sleep(1); // Имитация изготовления детали A
+        sem_post(&semA); // Увеличение счетчика деталей A
+    }
+    return NULL;
+}
+
+void* produceB(void* arg) {
+    while (1) {
+        sleep(2); // Имитация изготовления детали B
+        sem_post(&semB); // Увеличение счетчика деталей B
+    }
+    return NULL;
+}
+
+void* produceC(void* arg) {
+    while (1) {
+        sleep(3); // Имитация изготовления детали C
+        sem_post(&semC); // Увеличение счетчика деталей C
+    }
+    return NULL;
+}
+
+void* assembleWidget(void* arg) {
+    while (1) {
+        sem_wait(&semA); // Ожидание наличия детали A
+        sem_wait(&semB); // Ожидание наличия детали B
+        sem_wait(&semC); // Ожидание наличия детали C
+
+        printf("Widget assembled!\n");
+
+        sem_post(&semWidget); // Увеличение счетчика собранных винтиков
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t threadA, threadB, threadC, threadWidget;
+
+    // Инициализация семафоров-счетчиков
+    sem_init(&semA, 0, 0);
+    sem_init(&semB, 0, 0);
+    sem_init(&semC, 0, 0);
+    sem_init(&semWidget, 0, 0);
+
+    // Создание потоков для производства деталей
+    pthread_create(&threadA, NULL, produceA, NULL);
+    pthread_create(&threadB, NULL, produceB, NULL);
+    pthread_create(&threadC, NULL, produceC, NULL);
+
+    // Создание потока для сборки винтиков
+    pthread_create(&threadWidget, NULL, assembleWidget, NULL);
+
+    // Ожидание сборки 10 винтиков
+    for (int i = 0; i < 10; i++) {
+        sem_wait(&semWidget);
+    }
+
+    // Остановка производства
+    pthread_cancel(threadA);
+    pthread_cancel(threadB);
+    pthread_cancel(threadC);
+    pthread_cancel(threadWidget);
+
+    // Освобождение ресурсов
+    sem_destroy(&semA);
+    sem_destroy(&semB);
+    sem_destroy(&semC);
+    sem_destroy(&semWidget);
+
+    return 0;
+}
+
+
+###21 Реализуйте простой HTTP-клиент. Он принимает один параметр командной строки - URL. 
+Клиент делает запрос по указанному URL и выдает тело ответа на терминал как текст 
+(т.е. если в ответе HTML, то распечатывает его исходный текст без форматирования). 
+Вывод производится по мере того, как данные поступают из HTTP-соединения. 
+Когда будет выведено более экрана (более 25 строк)данных, клиент должен продолжить прием данных, но должен остановить вывод и выдать приглашение Press space to scroll down.
+При нажатии пользователем клиент должен вывести следующий экран данных. 
+Для одновременного считывания данных с терминала и из сетевого соединения используйте системный вызов select.###
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+
+#define BUFFER_SIZE 1024
+
+void printResponse(int sockfd) {
+    char buffer[BUFFER_SIZE];
+    int bytesRead;
+
+    while ((bytesRead = read(sockfd, buffer, BUFFER_SIZE - 1)) > 0) {
+        buffer[bytesRead] = '\0';
+        printf("%s", buffer);
+
+        // Проверяем, если выведено более 25 строк, выводим приглашение
+        static int linesPrinted = 0;
+        linesPrinted += bytesRead;
+        if (linesPrinted > 25) {
+            printf("\nPress space to scroll down...");
+            fflush(stdout);
+
+            // Ожидаем нажатия пробела
+            char c;
+            while ((c = getchar()) != ' ');
+
+            // Очищаем приглашение
+            printf("\r");
+            for (int i = 0; i < linesPrinted; i++) {
+                printf(" ");
+            }
+            printf("\r");
+            fflush(stdout);
+
+            linesPrinted = 0;
+        }
+    }
+
+    if (bytesRead < 0) {
+        perror("Error reading from socket");
+    }
+}
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <URL>\n", argv[0]);
+        return 1;
+    }
+
+    char *url = argv[1];
+
+    // Разбор URL
+    char *hostname, *path;
+    int port = 80;
+
+    if (strncmp(url, "http://", 7) == 0) {
+        url += 7;
+    }
+
+    char *slash = strchr(url, '/');
+    if (slash != NULL) {
+        *slash = '\0';
+        path = slash + 1;
+    } else {
+        path = "";
+    }
+
+    char *colon = strchr(url, ':');
+    if (colon != NULL) {
+        *colon = '\0';
+        port = atoi(colon + 1);
+    }
+
+    hostname = url;
+
+    // Создание сокета
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("Error creating socket");
+        return 1;
+    }
+
+    // Получение IP-адреса по имени хоста
+    struct hostent *server = gethostbyname(hostname);
+    if (server == NULL) {
+        fprintf(stderr, "Error: No such host '%s'\n", hostname);
+        return 1;
+    }
+
+    // Заполнение структуры адреса сервера
+    struct sockaddr_in serverAddr;
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(port);
+    memcpy(&serverAddr.sin_addr.s_addr, server->h_addr, server->h_length);
+
+    // Установка соединения
+    if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
+        perror("Error connecting to server");
+        return 1;
+    }
+
+    // Формирование HTTP-запроса
+    char request[BUFFER_SIZE];
+    snprintf(request, BUFFER_SIZE, "GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n", path, hostname);
+
+    // Отправка запроса
+    if (write(sockfd, request, strlen(request)) < 0) {
+        perror("Error sending request");
+        return 1;
+    }
+
+    // Ожидание данных с терминала или из сетевого соединения
+    fd_set readfds;
+    int maxfd = sockfd + 1;
+
+    while (1) {
+        FD_ZERO(&readfds);
+        FD_SET(STDIN_FILENO, &readfds);
+        FD_SET(sockfd, &readfds);
+
+        if (select(maxfd, &readfds, NULL, NULL, NULL) < 0) {
+            perror("Error in select");
+            return 1;
+        }
+
+        if (FD_ISSET(STDIN_FILENO, &readfds)) {
+            // Данные доступны на терминале, игнорируем их
+            char buffer[BUFFER_SIZE];
+            read(STDIN_FILENO, buffer, BUFFER_SIZE);
+        }
+
+        if (FD_ISSET(sockfd, &readfds)) {
+            // Данные доступны в сетевом соединении, выводим их
+            printResponse(sockfd);
+        }
+    }
+
+    // Закрытие сокета
+    close(sockfd);
+
+    return 0;
+}
+
+
+###22 Реализуте задачу упр. 22, используя системные вызовы aioread и aiowait.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <aio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+
+#define BUFFER_SIZE 1024
+
+void readCallback(sigval_t sigval) {
+    struct aiocb *aio = (struct aiocb *)sigval.sival_ptr;
+    int bytesRead = aio_return(aio);
+
+    if (bytesRead == -1) {
+        fprintf(stderr, "Error reading file: %s\n", strerror(errno));
+        return;
+    }
+
+    char *buffer = (char *)aio->aio_buf;
+    buffer[bytesRead] = '\0';
+    printf("Read: %s\n", buffer);
+
+    aio->aio_offset += bytesRead;
+    aio_read(aio);
+}
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
+        return 1;
+    }
+
+    const char *filename = argv[1];
+    int fileDescriptor = open(filename, O_RDONLY);
+    if (fileDescriptor == -1) {
+        fprintf(stderr, "Error opening file: %s\n", strerror(errno));
+        return 1;
+    }
+
+    struct aiocb aio;
+    memset(&aio, 0, sizeof(struct aiocb));
+    aio.aio_fildes = fileDescriptor;
+    aio.aio_buf = malloc(BUFFER_SIZE + 1);
+    aio.aio_nbytes = BUFFER_SIZE;
+    aio.aio_sigevent.sigev_notify = SIGEV_THREAD;
+    aio.aio_sigevent.sigev_notify_function = readCallback;
+    aio.aio_sigevent.sigev_value.sival_ptr = &aio;
+
+    aio_read(&aio);
+
+    while (1) {
+        aio_waitcomplete(&aio, NULL);
+    }
+
+    free(aio.aio_buf);
+    close(fileDescriptor);
+
+    return 0;
+}
+
+
+
+###23 Реализуйте задачу упр. 21, используя две нити, одну для считывания данных из сетевого соединения, другую для взаимодействия с пользователем.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+
+#define BUFFER_SIZE 1024
+
+void* readFromSocket(void* arg) {
+    int sockfd = *(int*)arg;
+    char buffer[BUFFER_SIZE];
+    int bytesRead;
+
+    while ((bytesRead = read(sockfd, buffer, BUFFER_SIZE - 1)) > 0) {
+        buffer[bytesRead] = '\0';
+        printf("Received: %s\n", buffer);
+    }
+
+    close(sockfd);
+    return NULL;
+}
+
+void* interactWithUser(void* arg) {
+    while (1) {
+        printf("Press Enter to continue or 'q' to quit: ");
+        char input[10];
+        fgets(input, sizeof(input), stdin);
+
+        if (strcmp(input, "q\n") == 0) {
+            break;
+        }
+    }
+
+    return NULL;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <hostname> <port>\n", argv[0]);
+        return 1;
+    }
+
+    const char* hostname = argv[1];
+    const char* port = argv[2];
+
+    // Создание сокета
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd == -1) {
+        perror("Error creating socket");
+        return 1;
+    }
+
+    // Получение информации об адресе сервера
+    struct addrinfo hints, *serverinfo;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if (getaddrinfo(hostname, port, &hints, &serverinfo) != 0) {
+        perror("Error getting server address");
+        return 1;
+    }
+
+    // Подключение к серверу
+    if (connect(sockfd, serverinfo->ai_addr, serverinfo->ai_addrlen) == -1) {
+        perror("Error connecting to server");
+        return 1;
+    }
+
+    freeaddrinfo(serverinfo);
+
+    // Создание нитей
+    pthread_t readThread, interactThread;
+
+    if (pthread_create(&readThread, NULL, readFromSocket, &sockfd) != 0) {
+        perror("Error creating read thread");
+        return 1;
+    }
+
+    if (pthread_create(&interactThread, NULL, interactWithUser, NULL) != 0) {
+        perror("Error creating interact thread");
+        return 1;
+    }
+
+    // Ожидание завершения нитей
+    pthread_join(readThread, NULL);
+    pthread_join(interactThread, NULL);
+
+    return 0;
+}
+
+
+###28 Разработайте многопоточное приложение, выполняющее вычисление произведения матриц A (m×n) и B (n×k). 
+Элементы cij матрицы произведения С = A×B вычисляются параллельно p однотипными потоками. 
+Если некоторый поток уже вычисляет элемент cij матрицы C, то следующий приступающий к вычислению поток выбирает для расчета элемент cij+1, 
+если j<k, и ci+1k, если j=k. Выполнив вычисление элемента матрицы-произведения, поток проверяет, нет ли элемента, который еще не рассчитывается. 
+Если такой элемент есть, то приступает к его расчету. В противном случае отправляет (пользовательское) сообщение о завершении своей работы и приостанавливает 
+своё выполнение. Главный поток, получив сообщения о завершении вычислений от всех потоков, выводит результат на экран и запускает поток, записывающий результат 
+в конец файла-протокола. В каждом потоке должна быть задержка в выполнении вычислений (чтобы дать возможность поработать всем потокам). 
+Синхронизацию потоков между собой организуйте через критическую секцию или мьютекс.###
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define MAX_THREADS 10
+
+int m = 3; // Количество строк матрицы A
+int n = 4; // Количество столбцов матрицы A и строк матрицы B
+int k = 2; // Количество столбцов матрицы B
+
+int A[3][4] = {{1, 2, 3, 4},
+               {5, 6, 7, 8},
+               {9, 10, 11, 12}};
+
+int B[4][2] = {{1, 2},
+               {3, 4},
+               {5, 6},
+               {7, 8}};
+
+int C[3][2]; // Матрица-произведение C = A * B
+
+pthread_mutex_t mutex; // Мьютекс для синхронизации потоков
+pthread_cond_t cond;   // Условная переменная для ожидания завершения всех потоков
+
+void* multiply(void* arg) {
+    int thread_id = *(int*)arg;
+
+    // Задержка для имитации работы потока
+    usleep(100000 * thread_id);
+
+    // Вычисление произведения матрицы
+    for (int i = thread_id; i < m; i += MAX_THREADS) {
+        for (int j = 0; j < k; j++) {
+            int sum = 0;
+            for (int l = 0; l < n; l++) {
+                sum += A[i][l] * B[l][j];
+            }
+            pthread_mutex_lock(&mutex);
+            C[i][j] = sum;
+            pthread_mutex_unlock(&mutex);
+        }
+    }
+
+    // Ожидание завершения всех потоков
+    pthread_mutex_lock(&mutex);
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&mutex);
+
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t threads[MAX_THREADS];
+    int thread_ids[MAX_THREADS];
+
+    pthread_mutex_init(&mutex, NULL);
+    pthread_cond_init(&cond, NULL);
+
+    // Создание потоков
+    for (int i = 0; i < MAX_THREADS; i++) {
+        thread_ids[i] = i;
+        pthread_create(&threads[i], NULL, multiply, &thread_ids[i]);
+    }
+
+    // Ожидание завершения всех потоков
+    pthread_mutex_lock(&mutex);
+    pthread_cond_wait(&cond, &mutex);
+    pthread_mutex_unlock(&mutex);
+
+    // Вывод результата
+    printf("Matrix C:\n");
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < k; j++) {
+            printf("%d ", C[i][j]);
+        }
+        printf("\n");
+    }
+
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&cond);
+
+    return 0;
+}
+
+
+###Задача 4, которая последняя в файле: На клумбе растет 40 цветов, за ними непрерывно следят два садовника и поливают увядшие цветы, 
+при этом оба садовника очень боятся полить один и тот же цветок. 
+Создать многопоточное приложение, моделирующее состояния клумбы и действия садовников.###
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define NUM_FLOWERS 40
+#define NUM_GARDENERS 2
+
+pthread_mutex_t mutex;
+int flowers[NUM_FLOWERS];
+
+void* gardener(void* arg) {
+    int gardener_id = *(int*)arg;
+
+    while (1) {
+        // Проверяем, есть ли увядшие цветы
+        int wilting_flower = -1;
+        pthread_mutex_lock(&mutex);
+        for (int i = 0; i < NUM_FLOWERS; i++) {
+            if (flowers[i] == 1) {
+                wilting_flower = i;
+                flowers[i] = 0;
+                break;
+            }
+        }
+        pthread_mutex_unlock(&mutex);
+
+        if (wilting_flower != -1) {
+            printf("Gardener %d is watering flower %d\n", gardener_id, wilting_flower);
+            sleep(1); // Имитация полива цветка
+        } else {
+            printf("Gardener %d is resting\n", gardener_id);
+            sleep(2); // Имитация отдыха садовника
+        }
+    }
+
+    return NULL;
+}
+
+int main() {
+    pthread_t gardeners[NUM_GARDENERS];
+    int gardener_ids[NUM_GARDENERS];
+
+    // Инициализация клумбы
+    for (int i = 0; i < NUM_FLOWERS; i++) {
+        flowers[i] = 1; // 1 - увядший цветок, 0 - свежий цветок
+    }
+
+    // Инициализация мьютекса
+    pthread_mutex_init(&mutex, NULL);
+
+    // Создание потоков-садовников
+    for (int i = 0; i < NUM_GARDENERS; i++) {
+        gardener_ids[i] = i;
+        pthread_create(&gardeners[i], NULL, gardener, &gardener_ids[i]);
+    }
+
+    // Ожидание завершения потоков-садовников
+    for (int i = 0; i < NUM_GARDENERS; i++) {
+        pthread_join(gardeners[i], NULL);
+    }
+
+    // Уничтожение мьютекса
+    pthread_mutex_destroy(&mutex);
+
+    return 0;
+}
+
