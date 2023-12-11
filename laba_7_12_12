@@ -1,0 +1,199 @@
+/*
+  Реализуйте очередь с нисходящим приоритетом.
+Приоритетная очередь является расширением обычной очереди.
+Очередь с нисходящим приоритетом имеет следующие свойства:
+• Каждый элемент, присутствующий в очереди, имеет связанный с ним приоритет.
+• Элемент с высоким приоритетом выводится из очереди раньше элемента с низким приоритетом, независимо от того, где он присутствует в очереди.
+• Если два элемента имеют одинаковый приоритет, то элемент, который пришел первым в очередь, исключается из очереди первым. (т.е. мы следуем принципу FIFO)
+Очередь создается таким образом, чтобы элемент с наивысшим приоритетом всегда находился в начале очереди.
+Очередь выстраивается в порядке убывания элементов в зависимости от их приоритета.
+Это сделано для того, чтобы мы могли удалить элемент с наивысшим приоритетом за время O(1).
+При вставке элемента очередь просматривается, чтобы найти правильную позицию, а затем элемент вставляется так, чтобы поддерживать общий порядок приоритетной очереди.
+
+*/
+
+//C++
+
+#include <iostream>
+#include <queue>
+
+// Структура для представления элемента в очереди
+struct QueueElement {
+    int data;
+    int priority;
+
+    QueueElement(int d, int p) : data(d), priority(p) {}
+};
+
+// Функция для сравнения элементов очереди с приоритетом
+struct ComparePriority {
+    bool operator()(const QueueElement& a, const QueueElement& b) {
+        // Используем убывающий порядок
+        return a.priority < b.priority;
+    }
+};
+
+// Класс для очереди с нисходящим приоритетом
+class PriorityQueue {
+private:
+    std::priority_queue<QueueElement, std::vector<QueueElement>, ComparePriority> pq;
+
+public:
+    // Вставка элемента в очередь
+    void enqueue(int data, int priority) {
+        QueueElement element(data, priority);
+        pq.push(element);
+    }
+
+    // Извлечение элемента с наивысшим приоритетом
+    int dequeue() {
+        if (!pq.empty()) {
+            int data = pq.top().data;
+            pq.pop();
+            return data;
+        } else {
+            // Возвращаем -1, если очередь пуста
+            return -1;
+        }
+    }
+
+    // Проверка, пуста ли очередь
+    bool isEmpty() const {
+        return pq.empty();
+    }
+};
+
+int main() {
+    PriorityQueue priorityQueue;
+
+    // Вставляем элементы с приоритетом
+    priorityQueue.enqueue(10, 2);
+    priorityQueue.enqueue(20, 1);
+    priorityQueue.enqueue(30, 3);
+
+    // Извлекаем элементы в порядке убывания приоритета
+    while (!priorityQueue.isEmpty()) {
+        std::cout << "Dequeued: " << priorityQueue.dequeue() << std::endl;
+    }
+
+    return 0;
+}
+
+
+/*
+  Реализуйте ADT с круговой очередью, используя Arrays.
+Круговая очередь:
+Круговая очередь позволяет избежать потери места при реализации обычной очереди с использованием массивов.
+Программирование на C++ и структуры данных
+Как работает круговая очередь
+Циклическая очередь работает по принципу циклического приращения, т. е. когда мы пытаемся увеличить любую переменную, и мы достигаем конца очереди, мы начинаем с начала очереди делением по модулю с размером очереди. то есть если REAR + 1 == 5 (переполнение!), REAR = (REAR + 1)%5 = 0 (начало очереди)
+Операции с очередью работают следующим образом:
+• Два указателя, называемые FRONT и REAR, используются для отслеживания первого и последнего элементов в
+очередь.
+• При инициализации очереди мы устанавливаем значение FRONT и REAR равным -1.
+• При подключении элемента мы циклически увеличиваем значение индекса REAR и помещаем новый
+элемент в позиции, на которую указывает REAR.
+• При исключении элемента из очереди мы возвращаем значение, на которое указывает FRONT, и циклически увеличиваем индекс FRONT.
+• Перед постановкой в очередь мы проверяем, заполнена ли очередь.
+• Перед удалением из очереди мы проверяем, пуста ли уже очередь.
+• При вызове первого элемента мы устанавливаем значение FRONT равным 0.
+• При исключении из очереди последнего элемента мы сбрасываем значения FRONT и REAR на -1.
+*/
+
+#include <iostream>
+
+const int MAX_SIZE = 5; // Максимальный размер круговой очереди
+
+class CircularQueue {
+private:
+    int front;
+    int rear;
+    int size;
+    int* array;
+
+public:
+    CircularQueue() : front(-1), rear(-1), size(0), array(new int[MAX_SIZE]) {}
+
+    ~CircularQueue() {
+        delete[] array;
+    }
+
+    // Проверка, пуста ли очередь
+    bool isEmpty() const {
+        return size == 0;
+    }
+
+    // Проверка, полна ли очередь
+    bool isFull() const {
+        return size == MAX_SIZE;
+    }
+
+    // Добавление элемента в очередь
+    void enqueue(int data) {
+        if (isFull()) {
+            std::cout << "Queue is full. Cannot enqueue." << std::endl;
+            return;
+        }
+
+        rear = (rear + 1) % MAX_SIZE;
+        array[rear] = data;
+
+        if (front == -1) {
+            // Если очередь была пуста, устанавливаем FRONT
+            front = rear;
+        }
+
+        size++;
+    }
+
+    // Извлечение элемента из очереди
+    int dequeue() {
+        if (isEmpty()) {
+            std::cout << "Queue is empty. Cannot dequeue." << std::endl;
+            return -1; // Возвращаем -1 для обозначения ошибки
+        }
+
+        int data = array[front];
+        front = (front + 1) % MAX_SIZE;
+        size--;
+
+        if (size == 0) {
+            // Если очередь пуста, сбрасываем FRONT и REAR
+            front = rear = -1;
+        }
+
+        return data;
+    }
+
+    // Получение значения, находящегося в начале очереди
+    int peek() const {
+        if (isEmpty()) {
+            std::cout << "Queue is empty. Cannot peek." << std::endl;
+            return -1; // Возвращаем -1 для обозначения ошибки
+        }
+
+        return array[front];
+    }
+};
+
+int main() {
+    CircularQueue cq;
+
+    cq.enqueue(10);
+    cq.enqueue(20);
+    cq.enqueue(30);
+
+    std::cout << "Front element: " << cq.peek() << std::endl;
+
+    std::cout << "Dequeued: " << cq.dequeue() << std::endl;
+    std::cout << "Dequeued: " << cq.dequeue() << std::endl;
+
+    std::cout << "Is queue empty? " << (cq.isEmpty() ? "Yes" : "No") << std::endl;
+
+    cq.enqueue(40);
+    cq.enqueue(50);
+
+    std::cout << "Front element: " << cq.peek() << std::endl;
+
+    return 0;
+}
