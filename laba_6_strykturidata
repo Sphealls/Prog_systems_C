@@ -1,0 +1,257 @@
+/*
+При помощи готовых динамических структур в языках c/C++, функций и классов в C++ реализовать следующие структуры данных:
+1)	Двоичное дерево поиска. Реализовать функции заполнения дерева, поиска значения в структуре.
+2)	Heap. Реализовать функции заполнения «кучи», поиска значения в структуре.
+3)	Связные списки. Реализовать функцию заполнения связных списков.
+4)	Префиксное дерево. Реализовать функцию заполнения префиксного дерева.
+*/
+
+/*
+При помощи готовых динамических структур в языках c/C++, функций и классов в C++ реализовать следующие структуры данных:
+1)	Двоичное дерево поиска. Реализовать функции заполнения дерева, поиска значения в структуре.
+*/
+#include <iostream>
+
+class TreeNode {
+public:
+    int data;
+    TreeNode* left;
+    TreeNode* right;
+
+    TreeNode(int value) : data(value), left(nullptr), right(nullptr) {}
+};
+
+class BinarySearchTree {
+private:
+    TreeNode* root;
+
+    TreeNode* insert(TreeNode* node, int value) {
+        if (node == nullptr)
+            return new TreeNode(value);
+
+        if (value < node->data)
+            node->left = insert(node->left, value);
+        else if (value > node->data)
+            node->right = insert(node->right, value);
+
+        return node;
+    }
+
+    bool search(TreeNode* node, int value) {
+        if (node == nullptr)
+            return false;
+
+        if (value == node->data)
+            return true;
+        else if (value < node->data)
+            return search(node->left, value);
+        else
+            return search(node->right, value);
+    }
+
+public:
+    BinarySearchTree() : root(nullptr) {}
+
+    void insert(int value) {
+        root = insert(root, value);
+    }
+
+    bool search(int value) {
+        return search(root, value);
+    }
+};
+
+int main() {
+    BinarySearchTree bst;
+
+    // Заполнение дерева
+    bst.insert(5);
+    bst.insert(3);
+    bst.insert(7);
+    bst.insert(2);
+    bst.insert(4);
+    bst.insert(6);
+    bst.insert(8);
+
+    // Поиск значения
+    std::cout << (bst.search(4) ? "Found" : "Not Found") << std::endl;
+    std::cout << (bst.search(9) ? "Found" : "Not Found") << std::endl;
+
+    return 0;
+}
+
+/*
+При помощи готовых динамических структур в языках c/C++, функций и классов в C++ реализовать следующие структуры данных:
+2)	Heap. Реализовать функции заполнения «кучи», поиска значения в структуре.
+*/
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+class MaxHeap {
+private:
+    std::vector<int> heap;
+
+public:
+    void insert(int value) {
+        heap.push_back(value);
+        std::push_heap(heap.begin(), heap.end());
+    }
+
+    bool search(int value) {
+        return std::find(heap.begin(), heap.end(), value) != heap.end();
+    }
+};
+
+int main() {
+    MaxHeap heap;
+
+    // Заполнение кучи
+    heap.insert(5);
+    heap.insert(3);
+    heap.insert(7);
+    heap.insert(2);
+    heap.insert(4);
+    heap.insert(6);
+    heap.insert(8);
+
+    // Поиск значения
+    std::cout << (heap.search(4) ? "Found" : "Not Found") << std::endl;
+    std::cout << (heap.search(9) ? "Found" : "Not Found") << std::endl;
+
+    return 0;
+}
+
+
+/*
+При помощи готовых динамических структур в языках c/C++, функций и классов в C++ реализовать следующие структуры данных:
+3)	Связные списки. Реализовать функцию заполнения связных списков.
+*/
+
+#include <iostream>
+
+class Node {
+public:
+    int data;
+    Node* next;
+
+    Node(int value) : data(value), next(nullptr) {}
+};
+
+class LinkedList {
+private:
+    Node* head;
+
+public:
+    LinkedList() : head(nullptr) {}
+
+    void insert(int value) {
+        Node* newNode = new Node(value);
+        newNode->next = head;
+        head = newNode;
+    }
+
+    bool search(int value) {
+        Node* current = head;
+        while (current != nullptr) {
+            if (current->data == value)
+                return true;
+            current = current->next;
+        }
+        return false;
+    }
+};
+
+int main() {
+    LinkedList linkedList;
+
+    // Заполнение связного списка
+    linkedList.insert(5);
+    linkedList.insert(3);
+    linkedList.insert(7);
+    linkedList.insert(2);
+    linkedList.insert(4);
+
+    // Поиск значения
+    std::cout << (linkedList.search(4) ? "Found" : "Not Found") << std::endl;
+    std::cout << (linkedList.search(9) ? "Found" : "Not Found") << std::endl;
+
+    return 0;
+}
+
+
+/*
+При помощи готовых динамических структур в языках c/C++, функций и классов в C++ реализовать следующие структуры данных:
+4)	Префиксное дерево. Реализовать функцию заполнения префиксного дерева.
+*/
+
+
+#include <iostream>
+#include <unordered_map>
+
+class TrieNode {
+public:
+    std::unordered_map<char, TrieNode*> children;
+    bool isEndOfWord;
+
+    TrieNode() : isEndOfWord(false) {}
+};
+
+class Trie {
+private:
+    TrieNode* root;
+
+    void insert(TrieNode* node, const std::string& word, int index) {
+        if (index == word.length()) {
+            node->isEndOfWord = true;
+            return;
+        }
+
+        char ch = word[index];
+        if (node->children.find(ch) == node->children.end()) {
+            node->children[ch] = new TrieNode();
+        }
+
+        insert(node->children[ch], word, index + 1);
+    }
+
+    bool search(TrieNode* node, const std::string& word, int index) {
+        if (index == word.length()) {
+            return node->isEndOfWord;
+        }
+
+        char ch = word[index];
+        if (node->children.find(ch) == node->children.end()) {
+            return false;
+        }
+
+        return search(node->children[ch], word, index + 1);
+    }
+
+public:
+    Trie() : root(new TrieNode()) {}
+
+    void insert(const std::string& word) {
+        insert(root, word, 0);
+    }
+
+    bool search(const std::string& word) {
+        return search(root, word, 0);
+    }
+};
+
+int main() {
+    Trie trie;
+
+    // Заполнение префиксного дерева
+    trie.insert("apple");
+    trie.insert("app");
+    trie.insert("banana");
+
+    // Поиск значения
+    std::cout << (trie.search("app") ? "Found" : "Not Found") << std::endl;
+    std::cout << (trie.search("orange") ? "Found" : "Not Found") << std::endl;
+
+    return 0;
+}
