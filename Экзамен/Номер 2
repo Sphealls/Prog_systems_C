@@ -1,0 +1,36 @@
+/******************************************************************************
+
+2. Найти элемент, наиболее близкий к среднему значению всех элементов массива.
+
+*******************************************************************************/
+#include <iostream>
+#include <cmath>
+
+int main() {
+    const int size = 5; // Размер массива (можно менять для других задач)
+    int arr[size] = {3, 8, 1, 4, 6}; // Исходный массив (можно менять для других задачах)
+
+    // Находим среднее значение
+    double average = 0;
+    for (int i = 0; i < size; ++i) {
+        average += arr[i];
+    }
+    average /= size;
+
+    // Ищем элемент, наиболее близкий к среднему значению
+    int closestElement = arr[0];
+    double minDifference = std::abs(average - arr[0]);
+    for (int i = 1; i < size; ++i) {
+        double currentDifference = std::abs(average - arr[i]);
+        if (currentDifference < minDifference) {
+            minDifference = currentDifference;
+            closestElement = arr[i];
+        }
+    }
+
+    // Выводим результат
+    std::cout << "Среднее значение: " << average << std::endl;
+    std::cout << "Элемент, наиболее близкий к среднему значению: " << closestElement << std::endl;
+
+    return 0;
+}
